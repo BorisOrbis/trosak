@@ -1,0 +1,2625 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#2c2c2e" id="theme-color-meta">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Troškovi">
+<title>Troškovi — Praćenje</title>
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" href="./icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #161618;
+  --bg2: #1c1c1e;
+  --bg3: #242426;
+  --bg4: #2c2c2e;
+  --border: #313133;
+  --border2: #3a3a3c;
+  --text: #e8e4dd;
+  --text2: #8a8580;
+  --text3: #555050;
+  --accent: #c8a96e;
+  --accent2: #a08040;
+  --green: #5a8a5a;
+  --red: #8a4a4a;
+  --blue: #4a6a8a;
+  --purple: #6a4a8a;
+  --cat-hrana: #c8a96e;
+  --cat-prijevoz: #6a8ac8;
+  --cat-zdravlje: #8ac86a;
+  --cat-zabava: #c86a8a;
+  --cat-rezije: #8a6ac8;
+  --cat-odijeca: #c8886a;
+  --cat-stednja: #6ac8a8;
+  --radius: 4px;
+  --radius2: 8px;
+  --mono: 'DM Mono', monospace;
+  --serif: 'Instrument Serif', serif;
+  --sans: 'DM Sans', sans-serif;
+  --shadow: none;
+  /* Font scale — 1.0 = default, range 0.8–1.4 */
+  --fs: 1;
+}
+
+[data-theme="light"] {
+  --bg: #f5f2ee;
+  --bg2: #ffffff;
+  --bg3: #ede9e3;
+  --bg4: #e4dfd7;
+  --border: #ddd9d2;
+  --border2: #ccc7be;
+  --text: #1a1714;
+  --text2: #6b6560;
+  --text3: #9a9590;
+  --accent: #a07838;
+  --accent2: #7a5a22;
+  --green: #3a6e3a;
+  --red: #8a2a2a;
+  --blue: #2a5a8a;
+  --purple: #5a2a8a;
+  --cat-hrana: #a07838;
+  --cat-prijevoz: #2a5aaa;
+  --cat-zdravlje: #3a7a3a;
+  --cat-zabava: #aa3a6a;
+  --cat-rezije: #5a3aaa;
+  --cat-odijeca: #aa5a3a;
+  --cat-stednja: #3aaa88;
+  --shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: calc(14px * var(--fs));
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── LAYOUT ── */
+#app { display: flex; flex-direction: column; min-height: 100vh; }
+
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(22,22,24,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 48px;
+}
+
+.logo {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+.logo span { color: var(--text2); font-size: 12px; font-family: var(--mono); margin-left: 8px; }
+
+.header-actions { display: flex; gap: 8px; }
+
+nav {
+  display: flex;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+nav::-webkit-scrollbar { display: none; }
+
+.nav-btn {
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  font-family: var(--mono);
+  font-size: calc(11px * var(--fs));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-btn:hover { color: var(--text2); }
+.nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+main { flex: 1; padding: 20px; max-width: 900px; margin: 0 auto; width: 100%; }
+
+/* ── VIEWS ── */
+.view { display: none; animation: fadeIn 0.2s ease; }
+.view.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  font-family: var(--mono);
+  font-size: calc(10px * var(--fs));
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+
+/* ── DASHBOARD ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+.stat-label {
+  font-family: var(--mono);
+  font-size: calc(10px * var(--fs));
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.stat-value {
+  font-family: var(--mono);
+  font-size: calc(20px * var(--fs));
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-value.negative { color: var(--red); }
+.stat-value.positive { color: var(--green); }
+.stat-sub {
+  font-family: var(--mono);
+  font-size: calc(10px * var(--fs));
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* ── RECENT LIST ── */
+.tx-list { display: flex; flex-direction: column; gap: 2px; }
+
+.tx-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  transition: background 0.15s;
+  cursor: pointer;
+  gap: 12px;
+}
+.tx-item:hover { background: var(--bg3); }
+
+.tx-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tx-info { flex: 1; min-width: 0; }
+.tx-name {
+  font-size: calc(13px * var(--fs));
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tx-meta {
+  font-family: var(--mono);
+  font-size: calc(10px * var(--fs));
+  color: var(--text3);
+}
+.tx-amount {
+  font-family: var(--mono);
+  font-size: calc(13px * var(--fs));
+  color: var(--red);
+  white-space: nowrap;
+}
+.tx-amount.income { color: var(--green); }
+
+/* ── BUDGET BARS ── */
+.budget-item { margin-bottom: 14px; }
+.budget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.budget-cat { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.budget-cat .dot { width: 8px; height: 8px; border-radius: 50%; }
+.budget-nums {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+.budget-bar-bg {
+  height: 4px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.budget-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── FORM ── */
+.form-grid { display: grid; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label {
+  font-family: var(--mono);
+  font-size: calc(10px * var(--fs));
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.form-input, .form-select, .form-textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: calc(14px * var(--fs));
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--accent);
+}
+.form-select option { background: var(--bg3); }
+.form-textarea { resize: vertical; min-height: 70px; font-family: var(--sans); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+@media (min-width: 480px) { .cat-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.cat-btn {
+  padding: 8px 6px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  background: var(--bg3);
+  color: var(--text2);
+  font-size: calc(11px * var(--fs));
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.cat-btn .cat-icon { font-size: calc(14px * var(--fs)); }
+.cat-btn:hover { border-color: var(--accent2); }
+.cat-btn.selected {
+  border-color: var(--accent);
+  background: rgba(200,169,110,0.1);
+  color: var(--accent);
+}
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: calc(12px * var(--fs));
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 500;
+}
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:hover { border-color: var(--accent2); color: var(--text); }
+.btn-danger {
+  background: transparent;
+  color: var(--red);
+  border: 1px solid var(--red);
+}
+.btn-danger:hover { background: rgba(138,74,74,0.2); }
+.btn-icon {
+  width: 30px; height: 30px;
+  padding: 0;
+  justify-content: center;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+.btn-icon:hover { border-color: var(--accent2); color: var(--text); }
+
+.btn-hdr {
+  height: 30px;
+  padding: 0 8px;
+  justify-content: center;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  border-radius: var(--radius);
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+.btn-hdr:hover { border-color: var(--accent2); color: var(--text); }
+
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+/* ── CHART ── */
+.chart-wrap { position: relative; }
+canvas { max-width: 100%; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 12px 12px 0 0;
+  padding: 24px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+
+@media (min-width: 600px) {
+  .modal-overlay { align-items: center; }
+  .modal { border-radius: 12px; max-height: 80vh; }
+}
+
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px;
+}
+.modal-title { font-family: var(--serif); font-size: 20px; color: var(--accent); }
+
+/* ── MONTH FILTER ── */
+.month-nav {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px;
+}
+.month-label { font-family: var(--mono); font-size: 13px; flex: 1; text-align: center; }
+
+/* ── RECURRING ── */
+.recurring-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  gap: 12px;
+  background: var(--bg3);
+}
+.recurring-info { flex: 1; }
+.recurring-name { font-size: 13px; margin-bottom: 2px; }
+.recurring-meta { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+.recurring-amount { font-family: var(--mono); font-size: 14px; color: var(--red); }
+
+/* ── TABLE ── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.data-table tr:hover td { background: var(--bg3); }
+.data-table tr:last-child td { border-bottom: none; }
+
+/* ── TABS ── */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--bg3); border-radius: var(--radius); padding: 4px; }
+.tab-btn {
+  flex: 1;
+  padding: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all 0.15s;
+  text-align: center;
+}
+.tab-btn.active { background: var(--bg2); color: var(--accent); }
+
+/* ── SETTINGS ── */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: calc(13px * var(--fs)); }
+.setting-desc { font-family: var(--mono); font-size: calc(10px * var(--fs)); color: var(--text3); margin-top: 2px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  z-index: 300;
+  transition: transform 0.3s;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
+
+/* ── SECTION HEADING ── */
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--text);
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── FAB ── */
+.fab {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(200,169,110,0.3);
+  z-index: 150;
+  transition: all 0.2s;
+}
+.fab:hover { background: var(--accent2); transform: scale(1.05); }
+
+/* ── MONTH SUMMARY ── */
+.month-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.month-bar-label { font-family: var(--mono); font-size: 11px; color: var(--text2); width: 36px; text-align: right; }
+.month-bar-bg { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.month-bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.5s; }
+.month-bar-val { font-family: var(--mono); font-size: 11px; color: var(--text3); width: 70px; text-align: right; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  background: var(--bg3);
+  color: var(--text3);
+  border: 1px solid var(--border);
+}
+.badge.recurring { color: var(--blue); border-color: var(--blue); }
+</style>
+</head>
+<body>
+<div id="app">
+
+<header>
+  <div class="logo">Troškovi <span>v1.0</span></div>
+  <div class="header-actions" style="gap:6px;">
+    <button class="btn-hdr" onclick="toggleTheme()" id="theme-toggle-btn" title="Promijeni temu">☀</button>
+    <button class="btn-hdr" onclick="exportXLSX()" title="Export Excel">⬇ XLSX</button>
+    <button class="btn-hdr" onclick="exportCSV()" title="Export CSV">⬇ CSV</button>
+  </div>
+</header>
+
+<nav>
+  <button class="nav-btn active" onclick="showView('dashboard')">⬚ Dashboard</button>
+  <button class="nav-btn" onclick="showView('add')">+ Unos</button>
+  <button class="nav-btn" onclick="showView('history')">≡ Povijest</button>
+  <button class="nav-btn" onclick="showView('budget')">◎ Budžet</button>
+  <button class="nav-btn" onclick="showView('charts')">∿ Grafovi</button>
+  <button class="nav-btn" onclick="showView('incomes')">+ Prihodi</button>
+  <button class="nav-btn" onclick="showView('recurring')">↺ Ponavljajući</button>
+  <button class="nav-btn" onclick="showView('settings')">⚙ Postavke</button>
+</nav>
+
+<main>
+
+<!-- ══ DASHBOARD ══ -->
+<div id="view-dashboard" class="view active">
+  <div class="stats-grid" id="stats-grid"></div>
+
+  <div class="card">
+    <div class="card-title">Budžet ovog mjeseca</div>
+    <div id="budget-overview"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Top 3 troška ovog mjeseca</div>
+    <div id="top3-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-heading">
+      <div class="card-title" style="margin:0">Nedavni troškovi</div>
+      <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" onclick="showView('history')">Svi →</button>
+    </div>
+    <div class="tx-list" id="recent-list"></div>
+  </div>
+</div>
+
+<!-- ══ DODAJ TROŠAK ══ -->
+<div id="view-add" class="view">
+  <div class="section-heading">
+    <div class="section-title">Novi unos</div>
+  </div>
+
+  <!-- Type toggle -->
+  <div class="tabs" style="margin-bottom:16px;">
+    <button class="tab-btn active" id="type-expense-btn" onclick="setEntryType('expense', this)">− Trošak</button>
+    <button class="tab-btn" id="type-income-btn" onclick="setEntryType('income', this)">+ Prihod</button>
+  </div>
+
+  <div id="tab-manual" class="card">
+    <div id="income-cat-row" style="display:none;" class="form-group">
+      <label class="form-label">Vrsta prihoda</label>
+      <select class="form-select" id="inp-income-cat">
+        <option value="placa">💼 Plaća</option>
+        <option value="mirovina">🏦 Mirovina</option>
+        <option value="najam">🏠 Najam</option>
+        <option value="freelance">💻 Freelance</option>
+        <option value="ostalo_prihod">📦 Ostalo</option>
+      </select>
+    </div>
+    <div id="expense-cat-row" class="form-group">
+      <label class="form-label">Kategorija</label>
+      <div class="cat-grid" id="cat-grid"></div>
+    </div>
+    <div id="template-row" class="form-group" style="margin-top:12px; display:none;">
+      <label class="form-label">Predlošci</label>
+      <div id="template-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+    <div class="form-grid" style="margin-top:14px;">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Iznos (€)</label>
+          <input class="form-input" id="inp-amount" type="text" inputmode="decimal" placeholder="0.00" oninput="calcPreview(this)">
+          <div id="calc-preview" style="font-family:var(--mono);font-size:11px;color:var(--accent);margin-top:4px;min-height:16px;"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Datum</label>
+          <input class="form-input" id="inp-date" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Opis</label>
+        <input class="form-input" id="inp-desc" type="text" placeholder="Opis...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Napomena (opcionalno)</label>
+        <textarea class="form-textarea" id="inp-note" placeholder="Dodatne bilješke..."></textarea>
+      </div>
+      <div id="budget-hint" style="display:none;padding:8px 12px;background:var(--bg3);border-radius:var(--radius);border-left:2px solid var(--accent);font-family:var(--mono);font-size:11px;color:var(--text2);"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="save-btn" onclick="saveExpense()">✓ Spremi trošak</button>
+        <button class="btn btn-ghost" onclick="clearForm()">✕ Poništi</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ POVIJEST ══ -->
+<div id="view-history" class="view">
+  <div class="section-heading">
+    <div class="section-title">Povijest</div>
+  </div>
+
+  <div class="card" style="padding:12px 16px">
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+      <div class="month-nav" style="margin:0">
+        <button class="btn btn-icon" onclick="changeMonth(-1)">‹</button>
+        <div class="month-label" id="history-month-label">—</div>
+        <button class="btn btn-icon" onclick="changeMonth(1)">›</button>
+      </div>
+      <select class="form-select" style="width:auto;flex:1" id="filter-cat" onchange="renderHistory()">
+        <option value="">Sve kategorije</option>
+      </select>
+    </div>
+    <input class="form-input" id="history-search" type="text" placeholder="🔍 Pretraži opis..." oninput="renderHistory()" style="width:100%;">
+  </div>
+
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div id="history-list" style="max-height:600px; overflow-y:auto;"></div>
+  </div>
+
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">Ukupno prikazano:</span>
+    <span class="stat-value" id="history-total" style="font-size:18px"></span>
+  </div>
+</div>
+
+<!-- ══ BUDŽET ══ -->
+<div id="view-budget" class="view">
+  <div class="section-heading">
+    <div class="section-title">Budžet</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Postavi limite po kategoriji (€/mj)</div>
+    <div id="budget-form"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveBudget()">✓ Spremi budžet</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Status ovog mjeseca</div>
+    <div id="budget-status"></div>
+  </div>
+</div>
+
+<!-- ══ GRAFOVI ══ -->
+<div id="view-charts" class="view">
+  <div class="section-heading">
+    <div class="section-title">Grafovi</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchChartTab('pie', this)">Kategorije</button>
+    <button class="tab-btn" onclick="switchChartTab('monthly', this)">Trendovi</button>
+    <button class="tab-btn" onclick="switchChartTab('daily', this)">Dnevni</button>
+  </div>
+
+  <div class="card chart-wrap" id="chart-pie-wrap">
+    <div class="card-title">Raspodjela po kategorijama</div>
+    <canvas id="chart-pie" height="260"></canvas>
+    <div id="pie-legend" style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+  </div>
+
+  <div class="card chart-wrap" id="chart-monthly-wrap" style="display:none">
+    <div class="card-title">Troškovi po mjesecima</div>
+    <canvas id="chart-monthly" height="220"></canvas>
+  </div>
+
+  <div class="card chart-wrap" id="chart-daily-wrap" style="display:none">
+    <div class="card-title">Dnevni troškovi (ovaj mjesec)</div>
+    <canvas id="chart-daily" height="220"></canvas>
+  </div>
+</div>
+
+<!-- ══ PONAVLJAJUĆI ══ -->
+<div id="view-recurring" class="view">
+  <div class="section-heading">
+    <div class="section-title">Ponavljajući troškovi</div>
+    <button class="btn btn-primary" onclick="openRecurringModal()">+ Dodaj</button>
+  </div>
+
+  <div id="recurring-list"></div>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="card-title">Primijeni sve ovaj mjesec</div>
+    <p style="color:var(--text2);font-size:12px;margin-bottom:12px">
+      Automatski unosi sve ponavljajuće troškove za tekući mjesec.
+    </p>
+    <button class="btn btn-ghost" onclick="applyRecurring()">↺ Primijeni ponavljajuće</button>
+  </div>
+</div>
+
+<!-- ══ PRIHODI ══ -->
+<div id="view-incomes" class="view">
+  <div class="section-heading">
+    <div class="section-title">Prihodi</div>
+    <button class="btn btn-primary" onclick="showView('add'); setTimeout(()=>{ setEntryType('income', document.getElementById('type-income-btn')); },50)">+ Dodaj</button>
+  </div>
+
+  <div class="card" style="padding:12px 16px">
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <div class="month-nav" style="margin:0">
+        <button class="btn btn-icon" onclick="changeIncomeMonth(-1)">‹</button>
+        <div class="month-label" id="income-month-label">—</div>
+        <button class="btn btn-icon" onclick="changeIncomeMonth(1)">›</button>
+      </div>
+      <select class="form-select" style="width:auto;flex:1" id="filter-income-cat" onchange="renderIncomes()">
+        <option value="">Sve vrste</option>
+        <option value="placa">💼 Plaća</option>
+        <option value="mirovina">🏦 Mirovina</option>
+        <option value="najam">🏠 Najam</option>
+        <option value="freelance">💻 Freelance</option>
+        <option value="ostalo_prihod">📦 Ostalo</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div id="incomes-list"></div>
+  </div>
+
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">Ukupno prihoda:</span>
+    <span class="stat-value positive" id="incomes-total" style="font-size:18px"></span>
+  </div>
+</div>
+
+<!-- ══ POSTAVKE ══ -->
+<div id="view-settings" class="view">
+  <div class="section-heading">
+    <div class="section-title">Postavke</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Podaci</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Export podataka</div>
+        <div class="setting-desc">Spremi sve transakcije</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" onclick="exportXLSX()">⬇ XLSX</button>
+        <button class="btn btn-ghost" onclick="exportCSV()">⬇ CSV</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Export JSON</div>
+        <div class="setting-desc">Puna sigurnosna kopija</div>
+      </div>
+      <button class="btn btn-ghost" onclick="exportJSON()">⬇ JSON</button>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Import podataka</div>
+        <div class="setting-desc">Uvezi JSON backup</div>
+      </div>
+      <button class="btn btn-ghost" onclick="document.getElementById('import-input').click()">⬆ Import</button>
+    </div>
+    <input type="file" id="import-input" accept=".json" style="display:none" onchange="importJSON(event)">
+    <div class="setting-row">
+      <div>
+        <div class="setting-label" style="color:var(--red)">Obriši sve podatke</div>
+        <div class="setting-desc">Ova radnja je nepovratna</div>
+      </div>
+      <button class="btn btn-danger" onclick="clearAllData()">✕ Briši</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Kategorije troškova</div>
+    <div id="categories-list"></div>
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-ghost" onclick="openCatModal()">+ Nova kategorija</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Predlošci troškova</div>
+    <div id="templates-list"></div>
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-ghost" onclick="openTemplateModal()">+ Novi predložak</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Veličina teksta</div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:12px;">
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+        <span class="setting-label">Veličina fonta</span>
+        <span class="setting-label" id="fs-value-label" style="color:var(--accent);font-family:var(--mono);">100%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;width:100%;">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">A</span>
+        <input type="range" id="fs-slider" min="80" max="140" step="5" value="100"
+          style="flex:1;accent-color:var(--accent);cursor:pointer;"
+          oninput="applyFontScale(this.value)">
+        <span style="font-family:var(--mono);font-size:16px;color:var(--text3);">A</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="applyFontScale(80)">80%</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="applyFontScale(90)">90%</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="applyFontScale(100)">100%</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="applyFontScale(110)">110%</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="applyFontScale(120)">120%</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="applyFontScale(130)">130%</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Info</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Verzija</div>
+        <div class="setting-desc">Troškovi PWA</div>
+      </div>
+      <span class="badge">v1.0</span>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Pohrana</div>
+        <div class="setting-desc">LocalStorage (offline, privatno)</div>
+      </div>
+      <span class="badge" id="storage-size">0 KB</span>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="showView('add')" title="Dodaj trošak">+</button>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Uredi trošak</div>
+      <button class="btn btn-icon" onclick="closeModal('modal-edit')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Kategorija</label>
+        <div class="cat-grid" id="edit-cat-grid"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Iznos (€)</label>
+          <input class="form-input" id="edit-amount" type="number" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Datum</label>
+          <input class="form-input" id="edit-date" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Opis</label>
+        <input class="form-input" id="edit-desc" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Napomena</label>
+        <textarea class="form-textarea" id="edit-note"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveEdit()">✓ Spremi</button>
+        <button class="btn btn-danger" onclick="deleteExpense()">✕ Obriši</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recurring Modal -->
+<div class="modal-overlay" id="modal-recurring">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Ponavljajući trošak</div>
+      <button class="btn btn-icon" onclick="closeModal('modal-recurring')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Naziv</label>
+        <input class="form-input" id="rec-name" type="text" placeholder="Stanarina, Struja...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kategorija</label>
+        <div class="cat-grid" id="rec-cat-grid"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Iznos (€)</label>
+          <input class="form-input" id="rec-amount" type="number" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dan u mjesecu</label>
+          <input class="form-input" id="rec-day" type="number" min="1" max="28" value="1">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveRecurring()">✓ Spremi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Template Modal -->
+<div class="modal-overlay" id="modal-template">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Predložak troška</div>
+      <button class="btn btn-icon" onclick="closeModal('modal-template')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Opis</label>
+        <input class="form-input" id="tpl-desc" type="text" placeholder="HEP — struja, A1 — telefon...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kategorija</label>
+        <div class="cat-grid" id="tpl-cat-grid"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Uobičajeni iznos (€) <span style="color:var(--text3);font-size:9px;">— može se mijenjati pri unosu</span></label>
+        <input class="form-input" id="tpl-amount" type="number" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveTemplate()">✓ Spremi predložak</button>
+        <button class="btn btn-danger" id="tpl-delete-btn" onclick="deleteTemplate()" style="display:none;">✕ Obriši</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Income Edit Modal -->
+<div class="modal-overlay" id="modal-edit-income">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Uredi prihod</div>
+      <button class="btn btn-icon" onclick="closeModal('modal-edit-income')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Vrsta prihoda</label>
+        <select class="form-select" id="edit-income-cat">
+          <option value="placa">💼 Plaća</option>
+          <option value="mirovina">🏦 Mirovina</option>
+          <option value="najam">🏠 Najam</option>
+          <option value="freelance">💻 Freelance</option>
+          <option value="ostalo_prihod">📦 Ostalo</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Iznos (€)</label>
+          <input class="form-input" id="edit-income-amount" type="number" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Datum</label>
+          <input class="form-input" id="edit-income-date" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Opis</label>
+        <input class="form-input" id="edit-income-desc" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Napomena</label>
+        <textarea class="form-textarea" id="edit-income-note"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveIncomeEdit()">✓ Spremi</button>
+        <button class="btn btn-danger" onclick="deleteIncome()">✕ Obriši</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal-overlay" id="modal-cat">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="cat-modal-title">Nova kategorija</div>
+      <button class="btn btn-icon" onclick="closeModal('modal-cat')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Naziv kategorije</label>
+        <input class="form-input" id="cat-label" type="text" placeholder="npr. Restoran, Sport..." autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ikona (emoji)</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="form-input" id="cat-icon" type="text" placeholder="🍕" maxlength="2" autocomplete="off"
+            style="width:64px;font-size:22px;text-align:center;padding:8px;">
+          <div style="flex:1;display:flex;flex-wrap:wrap;gap:6px;" id="cat-emoji-picker"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Boja</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;" id="cat-color-picker"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveCat()">✓ Spremi</button>
+        <button class="btn btn-danger" id="cat-delete-btn" onclick="deleteCat()" style="display:none;">✕ Obriši</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+
+// Resolves CSS variable to actual color value for Chart.js
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// ── Default categories (used if no custom ones saved) ──
+const DEFAULT_CATEGORIES = [
+  { id: 'hrana',    label: 'Hrana',     icon: '🛒', color: '#c8a96e' },
+  { id: 'prijevoz', label: 'Prijevoz',  icon: '🚗', color: '#6a8ac8' },
+  { id: 'zdravlje', label: 'Zdravlje',  icon: '💊', color: '#8ac86a' },
+  { id: 'zabava',   label: 'Zabava',    icon: '🎬', color: '#c86a8a' },
+  { id: 'rezije',   label: 'Režije',    icon: '⚡', color: '#8a6ac8' },
+  { id: 'odijeca',  label: 'Odjeća',    icon: '👕', color: '#c8886a' },
+  { id: 'stednja',  label: 'Štednja',   icon: '💰', color: '#6ac8a8' },
+  { id: 'ostalo',   label: 'Ostalo',    icon: '📦', color: '#555050' },
+];
+
+// Live array — populated after load()
+let CATEGORIES = [];
+
+function initCategories(saved) {
+  CATEGORIES = (saved && saved.length) ? saved : DEFAULT_CATEGORIES.map(c => ({...c}));
+  // Always ensure 'ostalo' exists as fallback
+  if (!CATEGORIES.find(c => c.id === 'ostalo')) {
+    CATEGORIES.push({ id: 'ostalo', label: 'Ostalo', icon: '📦', color: '#555050' });
+  }
+}
+
+function catById(id) { return CATEGORIES.find(c => c.id === id) || CATEGORIES.find(c => c.id === 'ostalo') || CATEGORIES[CATEGORIES.length-1]; }
+
+let state = {
+  expenses: [],
+  incomes: [],
+  budget: {},
+  recurring: [],
+  templates: [],
+  currentMonth: localYM(new Date()),
+  editId: null,
+  recEditId: null,
+  entryType: 'expense',
+};
+
+function load() {
+  const raw = localStorage.getItem('boris_troskovi');
+  if (raw) {
+    const saved = JSON.parse(raw);
+    state.expenses  = saved.expenses  || [];
+    state.incomes   = saved.incomes   || [];
+    state.budget    = saved.budget    || {};
+    state.recurring = saved.recurring || [];
+    state.templates = saved.templates || [];
+    initCategories(saved.categories || null);
+  } else {
+    initCategories(null);
+  }
+}
+
+function save() {
+  localStorage.setItem('boris_troskovi', JSON.stringify({
+    expenses:   state.expenses,
+    incomes:    state.incomes,
+    budget:     state.budget,
+    recurring:  state.recurring,
+    templates:  state.templates,
+    categories: CATEGORIES,
+  }));
+  updateStorageSize();
+}
+
+function updateStorageSize() {
+  const raw = localStorage.getItem('boris_troskovi') || '';
+  const kb = (raw.length / 1024).toFixed(1);
+  const el = document.getElementById('storage-size');
+  if (el) el.textContent = kb + ' KB';
+}
+
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+
+let chartInstances = {};
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    if (b.textContent.toLowerCase().includes(id) ||
+       (id==='add' && b.textContent.includes('Unos')) ||
+       (id==='history' && b.textContent.includes('Povijest')) ||
+       (id==='budget' && b.textContent.includes('Budžet')) ||
+       (id==='charts' && b.textContent.includes('Grafovi')) ||
+       (id==='recurring' && b.textContent.includes('Ponavljajući')) ||
+       (id==='incomes' && b.textContent.includes('Prihodi') && b.textContent.includes('+')) ||
+       (id==='settings' && b.textContent.includes('Postavke')) ||
+       (id==='dashboard' && b.textContent.includes('Dashboard'))
+    ) b.classList.add('active');
+  });
+
+  if (id==='dashboard') renderDashboard();
+  if (id==='add')       buildTemplateDropdown();
+  if (id==='history')   { renderHistory(); }
+  if (id==='budget')    renderBudgetView();
+  if (id==='charts')    renderCharts();
+  if (id==='incomes')   renderIncomes();
+  if (id==='recurring') renderRecurringList();
+  if (id==='settings')  {
+    updateStorageSize();
+    renderTemplatesList();
+    renderCategoriesList();
+    const savedFs = localStorage.getItem('troskovi_fs') || '100';
+    const slider = document.getElementById('fs-slider');
+    const label  = document.getElementById('fs-value-label');
+    if (slider) slider.value = savedFs;
+    if (label)  label.textContent = savedFs + '%';
+  }
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+
+function renderDashboard() {
+  const now = new Date();
+  const curM  = localYM(now);
+  const prevM = localYM(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+
+  const cur  = state.expenses.filter(e => e.date.startsWith(curM));
+  const prev = state.expenses.filter(e => e.date.startsWith(prevM));
+
+  const sumCur  = cur.reduce((s,e) => s + e.amount, 0);
+  const sumPrev = prev.reduce((s,e) => s + e.amount, 0);
+  const diff = sumCur - sumPrev;
+
+  // Days left in month
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const daysPassed  = now.getDate();
+  const avgDaily    = daysPassed > 0 ? sumCur / daysPassed : 0;
+  const projected   = avgDaily * daysInMonth;
+
+  // Budget total
+  const totalBudget = Object.values(state.budget).reduce((s,v)=>s+v,0);
+  const remaining   = totalBudget - sumCur;
+
+  // Income this month
+  const curMStr = curM;
+  const sumIncome = state.incomes.filter(i => i.date.startsWith(curMStr)).reduce((s,i) => s+i.amount, 0);
+  const neto = sumIncome - sumCur;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Ovaj mjesec</div>
+      <div class="stat-value">${fmt(sumCur)}</div>
+      <div class="stat-sub">${now.toLocaleDateString('hr',{month:'long',year:'numeric'})}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">vs prošli mj.</div>
+      <div class="stat-value ${diff>0?'negative':'positive'}">${diff>0?'+':''}${fmt(diff)}</div>
+      <div class="stat-sub">Prošli: ${fmt(sumPrev)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Prihodi</div>
+      <div class="stat-value positive">${fmt(sumIncome)}</div>
+      <div class="stat-sub">Neto: <span style="color:${neto>=0?'var(--green)':'var(--red)'}">${neto>=0?'+':''}${fmt(neto)}</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Ostalo budžeta</div>
+      <div class="stat-value ${remaining<0?'negative':'positive'}">${fmt(remaining)}</div>
+      <div class="stat-sub">Budžet: ${fmt(totalBudget)}</div>
+    </div>
+  `;
+
+  // Top 3
+  const top3 = [...cur].sort((a,b) => b.amount - a.amount).slice(0,3);
+  const top3el = document.getElementById('top3-list');
+  if (top3el) {
+    if (!top3.length) {
+      top3el.innerHTML = '<div class="empty" style="padding:16px"><div class="empty-icon">∅</div>Nema troškova</div>';
+    } else {
+      top3el.innerHTML = top3.map((e,i) => {
+        const cat = catById(e.cat);
+        return `<div class="tx-item" onclick="openEdit('${e.id}')">
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text3);width:16px">${i+1}.</span>
+          <span class="tx-dot" style="background:${cat.color}"></span>
+          <div class="tx-info"><div class="tx-name">${e.desc}</div><div class="tx-meta">${cat.icon} ${cat.label} · ${fmtDate(e.date)}</div></div>
+          <div class="tx-amount">${fmt(e.amount)}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Budget bars
+  const budgetHTML = CATEGORIES.map(cat => {
+    const lim = state.budget[cat.id] || 0;
+    if (!lim) return '';
+    const spent = cur.filter(e=>e.cat===cat.id).reduce((s,e)=>s+e.amount,0);
+    const pct   = Math.min(100, lim > 0 ? (spent/lim)*100 : 0);
+    const over  = spent > lim;
+    return `
+      <div class="budget-item">
+        <div class="budget-header">
+          <div class="budget-cat">
+            <span class="dot" style="background:${cat.color}"></span>
+            ${cat.icon} ${cat.label}
+          </div>
+          <div class="budget-nums">${fmt(spent)} / ${fmt(lim)}</div>
+        </div>
+        <div class="budget-bar-bg">
+          <div class="budget-bar-fill" style="width:${pct}%;background:${over?'var(--red)':cat.color}"></div>
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('budget-overview').innerHTML = budgetHTML || '<div class="empty"><div class="empty-icon">◎</div>Nema definiranog budžeta</div>';
+
+  // Recent
+  const recent = [...state.expenses]
+    .sort((a,b) => b.ts - a.ts)
+    .slice(0, 8);
+  document.getElementById('recent-list').innerHTML = recent.length
+    ? recent.map(txRow).join('')
+    : '<div class="empty"><div class="empty-icon">∅</div>Nema troškova</div>';
+}
+
+function txRow(e) {
+  const cat = catById(e.cat);
+  return `
+    <div class="tx-item" onclick="openEdit('${e.id}')">
+      <span class="tx-dot" style="background:${cat.color}"></span>
+      <div class="tx-info">
+        <div class="tx-name">${e.desc || cat.label}</div>
+        <div class="tx-meta">${cat.icon} ${cat.label} · ${fmtDate(e.date)}${e.recurring?' · <span class="badge recurring">↺</span>':''}</div>
+      </div>
+      <div class="tx-amount">${fmt(e.amount)}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════
+
+function changeMonth(dir) {
+  const d = new Date(state.currentMonth + '-01');
+  d.setMonth(d.getMonth() + dir);
+  state.currentMonth = d.toISOString().slice(0,7);
+  renderHistory();
+}
+
+function renderHistory() {
+  const lbl = document.getElementById('history-month-label');
+  if (lbl) {
+    const d = new Date(state.currentMonth + '-01');
+    lbl.textContent = d.toLocaleDateString('hr', {month:'long', year:'numeric'});
+  }
+
+  // Fill category filter — rebuild each time so custom cats appear
+  const sel = document.getElementById('filter-cat');
+  if (sel) {
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">Sve kategorije</option>';
+    CATEGORIES.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.icon + ' ' + c.label;
+      sel.appendChild(o);
+    });
+    if (prev) sel.value = prev;
+  }
+
+  const catFilter = sel ? sel.value : '';
+  const searchEl = document.getElementById('history-search');
+  const searchQ = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  let items = state.expenses.filter(e => e.date.startsWith(state.currentMonth));
+  if (catFilter) items = items.filter(e => e.cat === catFilter);
+  if (searchQ) items = items.filter(e => (e.desc||'').toLowerCase().includes(searchQ) || (e.note||'').toLowerCase().includes(searchQ));
+  items.sort((a,b) => b.ts - a.ts);
+
+  const total = items.reduce((s,e)=>s+e.amount,0);
+  const el = document.getElementById('history-total');
+  if (el) el.textContent = fmt(total);
+
+  const list = document.getElementById('history-list');
+  if (!list) return;
+
+  if (!items.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">∅</div>Nema troškova za ovaj period</div>';
+    return;
+  }
+
+  // Group by day
+  const byDay = {};
+  items.forEach(e => {
+    if (!byDay[e.date]) byDay[e.date] = [];
+    byDay[e.date].push(e);
+  });
+
+  list.innerHTML = Object.keys(byDay).sort((a,b)=>b.localeCompare(a)).map(date => {
+    const dayTotal = byDay[date].reduce((s,e)=>s+e.amount,0);
+    return `
+      <div style="padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${fmtDate(date)}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${fmt(dayTotal)}</span>
+      </div>
+      ${byDay[date].map(txRow).join('')}`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// BUDGET VIEW
+// ══════════════════════════════════════════
+
+function renderBudgetView() {
+  const form = document.getElementById('budget-form');
+  form.innerHTML = CATEGORIES.map(cat => `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <span style="color:${cat.color};width:24px;text-align:center">${cat.icon}</span>
+      <span style="flex:1;font-size:13px;">${cat.label}</span>
+      <input class="form-input" style="width:100px;text-align:right"
+        type="number" step="1" min="0" id="bud-${cat.id}"
+        value="${state.budget[cat.id] || ''}" placeholder="0">
+    </div>
+  `).join('');
+
+  renderBudgetStatus();
+}
+
+function saveBudget() {
+  CATEGORIES.forEach(cat => {
+    const v = parseFloat(document.getElementById('bud-'+cat.id)?.value);
+    if (!isNaN(v) && v > 0) state.budget[cat.id] = v;
+    else delete state.budget[cat.id];
+  });
+  save();
+  toast('Budžet spremljen ✓');
+  renderBudgetStatus();
+}
+
+function renderBudgetStatus() {
+  const curM = state.currentMonth;
+  const cur  = state.expenses.filter(e => e.date.startsWith(curM));
+  const el   = document.getElementById('budget-status');
+  if (!el) return;
+
+  el.innerHTML = CATEGORIES.map(cat => {
+    const lim = state.budget[cat.id] || 0;
+    if (!lim) return '';
+    const spent = cur.filter(e=>e.cat===cat.id).reduce((s,e)=>s+e.amount,0);
+    const pct   = Math.min(100, (spent/lim)*100);
+    const over  = spent > lim;
+    return `
+      <div class="budget-item">
+        <div class="budget-header">
+          <div class="budget-cat"><span class="dot" style="background:${cat.color}"></span>${cat.icon} ${cat.label}</div>
+          <div class="budget-nums" style="color:${over?'var(--red)':'var(--text2)'}">
+            ${fmt(spent)} / ${fmt(lim)} ${over?'⚠':''}
+          </div>
+        </div>
+        <div class="budget-bar-bg">
+          <div class="budget-bar-fill" style="width:${pct}%;background:${over?'var(--red)':cat.color}"></div>
+        </div>
+      </div>`;
+  }).join('') || '<div class="empty"><div class="empty-icon">◎</div>Definirajte budžet gore</div>';
+}
+
+// ══════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════
+
+function switchChartTab(tab, btn) {
+  document.querySelectorAll('#view-charts .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('chart-pie-wrap').style.display     = tab==='pie'     ? '' : 'none';
+  document.getElementById('chart-monthly-wrap').style.display = tab==='monthly' ? '' : 'none';
+  document.getElementById('chart-daily-wrap').style.display   = tab==='daily'   ? '' : 'none';
+  if (tab==='pie')     drawPie();
+  if (tab==='monthly') drawMonthly();
+  if (tab==='daily')   drawDaily();
+}
+
+function renderCharts() { drawPie(); }
+
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+function drawPie() {
+  const curM = localYM(new Date());
+  const cur  = state.expenses.filter(e => e.date.startsWith(curM));
+
+  const data = CATEGORIES.map(cat => ({
+    cat, val: cur.filter(e=>e.cat===cat.id).reduce((s,e)=>s+e.amount,0)
+  })).filter(d=>d.val>0);
+
+  destroyChart('pie');
+  const ctx = document.getElementById('chart-pie').getContext('2d');
+  chartInstances['pie'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d=>d.cat.label),
+      datasets: [{
+        data: data.map(d=>d.val),
+        backgroundColor: data.map(d=>d.cat.color),
+        borderColor: cssVar('--bg'),
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)} (${Math.round(ctx.parsed/data.reduce((s,d)=>s+d.val,0)*100)}%)`
+          }
+        }
+      }
+    }
+  });
+
+  const leg = document.getElementById('pie-legend');
+  leg.innerHTML = data.map(d=>`
+    <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;">
+      <span style="width:10px;height:10px;border-radius:50%;background:${d.cat.color};display:inline-block"></span>
+      ${d.cat.label} — ${fmt(d.val)}
+    </div>`).join('');
+}
+
+function drawMonthly() {
+  const months = [];
+  const now = new Date();
+  for (let i=5; i>=0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push(localYM(d));
+  }
+  const labels = months.map(m => {
+    const d = new Date(m+'-01');
+    return d.toLocaleDateString('hr',{month:'short'});
+  });
+  const catDatasets = CATEGORIES.map(cat => ({
+    label: cat.label,
+    data: months.map(m => state.expenses.filter(e=>e.date.startsWith(m)&&e.cat===cat.id).reduce((s,e)=>s+e.amount,0)),
+    backgroundColor: cat.color,
+    borderRadius: 3,
+  }));
+
+  destroyChart('monthly');
+  const ctx = document.getElementById('chart-monthly').getContext('2d');
+  chartInstances['monthly'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: catDatasets },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: cssVar('--text2'), font: { family:'DM Mono', size:10 } } } },
+      scales: {
+        x: { stacked: true, grid: { color: cssVar('--bg3') }, ticks: { color: cssVar('--text3'), font:{family:'DM Mono',size:10} } },
+        y: { stacked: true, grid: { color: cssVar('--bg3') }, ticks: { color: cssVar('--text3'), font:{family:'DM Mono',size:10}, callback: v => fmt(v) } }
+      }
+    }
+  });
+}
+
+function drawDaily() {
+  const curM = localYM(new Date());
+  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+  const labels = Array.from({length:daysInMonth},(_,i)=>i+1);
+  const data = labels.map(d => {
+    const date = curM + '-' + String(d).padStart(2,'0');
+    return state.expenses.filter(e=>e.date===date).reduce((s,e)=>s+e.amount,0);
+  });
+
+  destroyChart('daily');
+  const ctx = document.getElementById('chart-daily').getContext('2d');
+  chartInstances['daily'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Dnevni troškovi',
+        data,
+        backgroundColor: cssVar('--accent') + '99',
+        borderColor: cssVar('--accent'),
+        borderWidth: 1,
+        borderRadius: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid:{color: cssVar('--bg3')}, ticks:{color: cssVar('--text3'),font:{family:'DM Mono',size:9}} },
+        y: { grid:{color: cssVar('--bg3')}, ticks:{color: cssVar('--text3'),font:{family:'DM Mono',size:10}, callback: v => fmt(v)} }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// ADD EXPENSE
+// ══════════════════════════════════════════
+
+let selectedCat = 'hrana';
+
+// buildCatGrid moved to templates section
+
+function selectCat(id) {
+  selectedCat = id;
+  buildCatGrid('cat-grid', 'selectCat');
+  buildTemplateDropdown();
+  updateBudgetHint();
+}
+
+function setEntryType(type, btn) {
+  state.entryType = type;
+  document.querySelectorAll('#view-add .tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const isIncome = type === 'income';
+  document.getElementById('income-cat-row').style.display = isIncome ? '' : 'none';
+  document.getElementById('expense-cat-row').style.display = isIncome ? 'none' : '';
+  document.getElementById('template-row').style.display = 'none';
+  document.getElementById('budget-hint').style.display = 'none';
+  document.getElementById('save-btn').textContent = isIncome ? '✓ Spremi prihod' : '✓ Spremi trošak';
+  if (!isIncome) buildTemplateDropdown();
+}
+
+function calcPreview(inp) {
+  const val = inp.value.replace(',','.');
+  const preview = document.getElementById('calc-preview');
+  // Support simple math: 87+12.30 or 45*2
+  if (/[\+\-\*\/]/.test(val)) {
+    try {
+      const result = Function('"use strict"; return (' + val + ')')();
+      if (isFinite(result) && result > 0) {
+        preview.textContent = '= ' + result.toFixed(2);
+        return;
+      }
+    } catch(e) {}
+  }
+  preview.textContent = '';
+  updateBudgetHint();
+}
+
+function updateBudgetHint() {
+  if (state.entryType !== 'expense') return;
+  const hint = document.getElementById('budget-hint');
+  const cat = selectedCat;
+  const lim = state.budget[cat];
+  if (!lim) { hint.style.display = 'none'; return; }
+  const curM = localYM(new Date());
+  const spent = state.expenses.filter(e => e.date.startsWith(curM) && e.cat === cat).reduce((s,e) => s+e.amount, 0);
+  const remaining = lim - spent;
+  const catObj = catById(cat);
+  hint.style.display = '';
+  hint.style.borderLeftColor = remaining < 0 ? 'var(--red)' : 'var(--accent)';
+  hint.innerHTML = remaining >= 0
+    ? `${catObj.icon} ${catObj.label}: još <strong>${remaining.toFixed(2)} €</strong> do limita ovaj mj.`
+    : `${catObj.icon} ${catObj.label}: prekoračen limit za <strong style="color:var(--red)">${Math.abs(remaining).toFixed(2)} €</strong>`;
+}
+
+function saveExpense(data) {
+  // Resolve calculator expression in amount field
+  let rawAmount;
+  if (data) {
+    rawAmount = data.amount;
+  } else {
+    const raw = document.getElementById('inp-amount').value.replace(',','.');
+    try { rawAmount = /[\+\-\*\/]/.test(raw) ? Function('"use strict"; return (' + raw + ')')() : parseFloat(raw); }
+    catch(e) { rawAmount = NaN; }
+  }
+
+  const d = data || {
+    cat:    state.entryType === 'income' ? (document.getElementById('inp-income-cat').value) : selectedCat,
+    amount: rawAmount,
+    desc:   document.getElementById('inp-desc').value.trim(),
+    date:   document.getElementById('inp-date').value,
+    note:   document.getElementById('inp-note').value.trim(),
+    type:   state.entryType,
+  };
+
+  if (!d.amount || isNaN(d.amount) || d.amount <= 0) { toast('Unesite valjani iznos'); return; }
+  if (!d.date) { toast('Odaberite datum'); return; }
+
+  if (d.type === 'income') {
+    const income = {
+      id: 'i_' + Date.now() + '_' + Math.random().toString(36).slice(2),
+      cat: d.cat || 'ostalo_prihod',
+      amount: d.amount,
+      desc: d.desc || 'Prihod',
+      date: d.date,
+      note: d.note || '',
+      ts: new Date(d.date).getTime(),
+    };
+    state.incomes.push(income);
+    save();
+    clearForm();
+    toast('Prihod spremljen ✓');
+    if (navigator.vibrate) navigator.vibrate(50);
+    renderDashboard();
+    return;
+  }
+
+  const expense = {
+    id: 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2),
+    cat: d.cat || 'ostalo',
+    amount: d.amount,
+    desc: d.desc || catById(d.cat).label,
+    date: d.date,
+    note: d.note || '',
+    recurring: false,
+    ts: new Date(d.date).getTime(),
+  };
+
+  state.expenses.push(expense);
+  save();
+  clearForm();
+  if (navigator.vibrate) navigator.vibrate(50);
+  toast('Trošak spremljen ✓');
+  renderDashboard();
+}
+
+function clearForm() {
+  document.getElementById('inp-amount').value = '';
+  document.getElementById('inp-desc').value = '';
+  document.getElementById('inp-note').value = '';
+  document.getElementById('inp-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('calc-preview').textContent = '';
+  document.getElementById('budget-hint').style.display = 'none';
+  selectedCat = 'hrana';
+  buildCatGrid('cat-grid', 'selectCat');
+  buildTemplateDropdown();
+  // Reset to expense mode
+  state.entryType = 'expense';
+  document.getElementById('income-cat-row').style.display = 'none';
+  document.getElementById('expense-cat-row').style.display = '';
+  document.getElementById('save-btn').textContent = '✓ Spremi trošak';
+  document.querySelectorAll('#view-add .tabs .tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', i === 0);
+  });
+}
+
+// ══════════════════════════════════════════
+// EDIT / DELETE
+// ══════════════════════════════════════════
+
+let editSelectedCat = 'hrana';
+
+function openEdit(id) {
+  const e = state.expenses.find(x=>x.id===id);
+  if (!e) return;
+  state.editId = id;
+  editSelectedCat = e.cat;
+  document.getElementById('edit-amount').value = e.amount;
+  document.getElementById('edit-desc').value   = e.desc;
+  document.getElementById('edit-date').value   = e.date;
+  document.getElementById('edit-note').value   = e.note || '';
+  buildEditCatGrid();
+  openModal('modal-edit');
+}
+
+function buildEditCatGrid() {
+  const grid = document.getElementById('edit-cat-grid');
+  grid.innerHTML = CATEGORIES.map(cat => `
+    <button class="cat-btn ${cat.id===editSelectedCat?'selected':''}" onclick="editSelectCat('${cat.id}')">
+      <span class="cat-icon">${cat.icon}</span>
+      <span>${cat.label}</span>
+    </button>`).join('');
+}
+
+function editSelectCat(id) { editSelectedCat = id; buildEditCatGrid(); }
+
+function saveEdit() {
+  const e = state.expenses.find(x=>x.id===state.editId);
+  if (!e) return;
+  e.cat    = editSelectedCat;
+  e.amount = parseFloat(document.getElementById('edit-amount').value);
+  e.desc   = document.getElementById('edit-desc').value.trim();
+  e.date   = document.getElementById('edit-date').value;
+  e.note   = document.getElementById('edit-note').value.trim();
+  e.ts     = new Date(e.date).getTime();
+  save();
+  closeModal('modal-edit');
+  toast('Trošak ažuriran ✓');
+  renderDashboard();
+  renderHistory();
+}
+
+function deleteExpense() {
+  if (!confirm('Obrisati ovaj trošak?')) return;
+  state.expenses = state.expenses.filter(e=>e.id!==state.editId);
+  save();
+  closeModal('modal-edit');
+  toast('Trošak obrisan');
+  renderDashboard();
+  renderHistory();
+}
+
+// ══════════════════════════════════════════
+// PRIHODI VIEW
+// ══════════════════════════════════════════
+
+let incomeCurrentMonth = localYM(new Date());
+let editIncomeId = null;
+
+const INCOME_LABELS = {
+  placa: '💼 Plaća', mirovina: '🏦 Mirovina', najam: '🏠 Najam',
+  freelance: '💻 Freelance', ostalo_prihod: '📦 Ostalo',
+};
+
+function changeIncomeMonth(dir) {
+  const d = new Date(incomeCurrentMonth + '-01');
+  d.setMonth(d.getMonth() + dir);
+  incomeCurrentMonth = d.toISOString().slice(0,7);
+  renderIncomes();
+}
+
+function renderIncomes() {
+  const lbl = document.getElementById('income-month-label');
+  if (lbl) {
+    const d = new Date(incomeCurrentMonth + '-01');
+    lbl.textContent = d.toLocaleDateString('hr', {month:'long', year:'numeric'});
+  }
+  const catFilter = document.getElementById('filter-income-cat')?.value || '';
+  let items = state.incomes.filter(i => i.date.startsWith(incomeCurrentMonth));
+  if (catFilter) items = items.filter(i => i.cat === catFilter);
+  items.sort((a,b) => b.ts - a.ts);
+
+  const total = items.reduce((s,i) => s + i.amount, 0);
+  const el = document.getElementById('incomes-total');
+  if (el) el.textContent = fmt(total);
+
+  const list = document.getElementById('incomes-list');
+  if (!list) return;
+
+  if (!items.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">💶</div>Nema prihoda za ovaj period</div>';
+    return;
+  }
+
+  const byDay = {};
+  items.forEach(i => { if (!byDay[i.date]) byDay[i.date] = []; byDay[i.date].push(i); });
+
+  list.innerHTML = Object.keys(byDay).sort((a,b)=>b.localeCompare(a)).map(date => {
+    const dayTotal = byDay[date].reduce((s,i)=>s+i.amount,0);
+    return `
+      <div style="padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${fmtDate(date)}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${fmt(dayTotal)}</span>
+      </div>
+      ${byDay[date].map(incomeRow).join('')}`;
+  }).join('');
+}
+
+function incomeRow(i) {
+  const label = INCOME_LABELS[i.cat] || '📦 Ostalo';
+  return `
+    <div class="tx-item" onclick="openIncomeEdit('${i.id}')">
+      <span class="tx-dot" style="background:var(--green)"></span>
+      <div class="tx-info">
+        <div class="tx-name">${i.desc || label}</div>
+        <div class="tx-meta">${label} · ${fmtDate(i.date)}</div>
+      </div>
+      <div class="tx-amount income">${fmt(i.amount)}</div>
+    </div>`;
+}
+
+function openIncomeEdit(id) {
+  const i = state.incomes.find(x=>x.id===id);
+  if (!i) return;
+  editIncomeId = id;
+  document.getElementById('edit-income-cat').value    = i.cat || 'ostalo_prihod';
+  document.getElementById('edit-income-amount').value = i.amount;
+  document.getElementById('edit-income-desc').value   = i.desc;
+  document.getElementById('edit-income-date').value   = i.date;
+  document.getElementById('edit-income-note').value   = i.note || '';
+  openModal('modal-edit-income');
+}
+
+function saveIncomeEdit() {
+  const i = state.incomes.find(x=>x.id===editIncomeId);
+  if (!i) return;
+  i.cat    = document.getElementById('edit-income-cat').value;
+  i.amount = parseFloat(document.getElementById('edit-income-amount').value);
+  i.desc   = document.getElementById('edit-income-desc').value.trim();
+  i.date   = document.getElementById('edit-income-date').value;
+  i.note   = document.getElementById('edit-income-note').value.trim();
+  i.ts     = new Date(i.date).getTime();
+  save();
+  closeModal('modal-edit-income');
+  toast('Prihod ažuriran ✓');
+  renderDashboard();
+  renderIncomes();
+}
+
+function deleteIncome() {
+  if (!confirm('Obrisati ovaj prihod?')) return;
+  state.incomes = state.incomes.filter(x=>x.id!==editIncomeId);
+  save();
+  closeModal('modal-edit-income');
+  toast('Prihod obrisan');
+  renderDashboard();
+  renderIncomes();
+}
+
+// ══════════════════════════════════════════
+// RECURRING
+// ══════════════════════════════════════════
+
+let recSelectedCat = 'rezije';
+
+function renderRecurringList() {
+  const list = document.getElementById('recurring-list');
+  if (!state.recurring.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">↺</div>Nema ponavljajućih troškova</div>';
+    return;
+  }
+  list.innerHTML = state.recurring.map(r => {
+    const cat = catById(r.cat);
+    return `
+      <div class="recurring-item">
+        <span style="font-size:20px">${cat.icon}</span>
+        <div class="recurring-info">
+          <div class="recurring-name">${r.name}</div>
+          <div class="recurring-meta">${cat.label} · svaki ${r.day}. u mj.</div>
+        </div>
+        <div class="recurring-amount">${fmt(r.amount)}</div>
+        <button class="btn btn-icon" onclick="deleteRecurring('${r.id}')">✕</button>
+      </div>`;
+  }).join('');
+}
+
+function openRecurringModal() {
+  recSelectedCat = 'rezije';
+  document.getElementById('rec-name').value = '';
+  document.getElementById('rec-amount').value = '';
+  document.getElementById('rec-day').value = '1';
+  buildRecCatGrid();
+  openModal('modal-recurring');
+}
+
+function buildRecCatGrid() {
+  document.getElementById('rec-cat-grid').innerHTML = CATEGORIES.map(cat=>`
+    <button class="cat-btn ${cat.id===recSelectedCat?'selected':''}" onclick="recSelectCat('${cat.id}')">
+      <span class="cat-icon">${cat.icon}</span>
+      <span>${cat.label}</span>
+    </button>`).join('');
+}
+function recSelectCat(id) { recSelectedCat = id; buildRecCatGrid(); }
+
+function saveRecurring() {
+  const name   = document.getElementById('rec-name').value.trim();
+  const amount = parseFloat(document.getElementById('rec-amount').value);
+  const day    = parseInt(document.getElementById('rec-day').value);
+  if (!name || !amount || isNaN(amount)) { toast('Popunite sva polja'); return; }
+  state.recurring.push({ id: 'r_'+Date.now(), name, cat: recSelectedCat, amount, day });
+  save();
+  closeModal('modal-recurring');
+  toast('Ponavljajući trošak dodan ✓');
+  renderRecurringList();
+}
+
+function deleteRecurring(id) {
+  if (!confirm('Obrisati ponavljajući trošak?')) return;
+  state.recurring = state.recurring.filter(r=>r.id!==id);
+  save();
+  renderRecurringList();
+  toast('Obrisano');
+}
+
+function applyRecurring() {
+  const curM = localYM(new Date());
+  state.recurring.forEach(r => {
+    const date = curM + '-' + String(Math.min(r.day,28)).padStart(2,'0');
+    const exists = state.expenses.some(e => e.date===date && e.desc===r.name && e.recurring);
+    if (!exists) {
+      state.expenses.push({
+        id: 'e_'+Date.now()+'_'+Math.random().toString(36).slice(2),
+        cat: r.cat, amount: r.amount, desc: r.name,
+        date, note: 'Automatski unos', recurring: true,
+        ts: new Date(date).getTime(),
+      });
+      added++;
+    }
+  });
+  save();
+  toast(`Primijenjeno ${added} ponavljajućih troškova`);
+  renderRecurringList();
+}
+
+// ══════════════════════════════════════════
+// CATEGORIES MANAGEMENT
+// ══════════════════════════════════════════
+
+const CAT_COLORS = [
+  '#c8a96e','#6a8ac8','#8ac86a','#c86a8a','#8a6ac8',
+  '#c8886a','#6ac8a8','#e87070','#70b8e8','#b8e870',
+  '#e870b8','#70e8b8','#e8b870','#8888cc','#cc8888',
+  '#88cc88','#cc88cc','#88cccc','#aaaaaa','#e8a030',
+];
+
+const CAT_EMOJIS = [
+  '🛒','🚗','💊','🎬','⚡','👕','💰','📦','🏠','✈️',
+  '🍕','☕','🐾','📚','🎮','💻','🏋️','🎁','🔧','🎵',
+  '🏥','🌿','🎨','🛍️','🍺','🚀','💎','🏖️','🚌','⛽',
+];
+
+let catEditId = null;
+let catSelectedColor = CAT_COLORS[0];
+
+function renderCategoriesList() {
+  const el = document.getElementById('categories-list');
+  if (!el) return;
+  el.innerHTML = CATEGORIES.map(cat => {
+    const isDefault = DEFAULT_CATEGORIES.find(d => d.id === cat.id);
+    return `
+      <div class="tx-item" onclick="openCatModal('${cat.id}')">
+        <span style="font-size:20px;width:28px;text-align:center">${cat.icon}</span>
+        <div class="tx-info">
+          <div class="tx-name">${cat.label}</div>
+          <div class="tx-meta">${isDefault ? 'Zadana kategorija' : 'Prilagođena kategorija'}</div>
+        </div>
+        <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${cat.color};flex-shrink:0;"></span>
+      </div>`;
+  }).join('');
+}
+
+function openCatModal(id) {
+  catEditId = id || null;
+  const cat = id ? CATEGORIES.find(c => c.id === id) : null;
+  catSelectedColor = cat ? cat.color : CAT_COLORS[Math.floor(Math.random() * CAT_COLORS.length)];
+
+  document.getElementById('cat-modal-title').textContent = cat ? 'Uredi kategoriju' : 'Nova kategorija';
+  document.getElementById('cat-label').value  = cat ? cat.label : '';
+  document.getElementById('cat-icon').value   = cat ? cat.icon  : '📦';
+
+  // Show delete only for custom cats (not defaults)
+  const isDefault = cat && DEFAULT_CATEGORIES.find(d => d.id === cat.id);
+  document.getElementById('cat-delete-btn').style.display = (cat && !isDefault) ? '' : 'none';
+
+  buildCatColorPicker();
+  buildCatEmojiPicker();
+  openModal('modal-cat');
+}
+
+function buildCatColorPicker() {
+  document.getElementById('cat-color-picker').innerHTML = CAT_COLORS.map(c => `
+    <button type="button" onclick="catPickColor('${c}')"
+      style="width:28px;height:28px;border-radius:50%;background:${c};border:3px solid ${c === catSelectedColor ? '#fff' : 'transparent'};
+             cursor:pointer;transition:border-color 0.15s;flex-shrink:0;"
+      id="cp-${c.replace('#','')}">
+    </button>`).join('');
+}
+
+function catPickColor(c) {
+  catSelectedColor = c;
+  buildCatColorPicker();
+}
+
+function buildCatEmojiPicker() {
+  document.getElementById('cat-emoji-picker').innerHTML = CAT_EMOJIS.map(e => `
+    <button type="button" onclick="document.getElementById('cat-icon').value='${e}'"
+      style="font-size:18px;background:none;border:none;cursor:pointer;padding:2px;line-height:1;">
+      ${e}
+    </button>`).join('');
+}
+
+function saveCat() {
+  const label = document.getElementById('cat-label').value.trim();
+  const icon  = document.getElementById('cat-icon').value.trim() || '📦';
+  if (!label) { toast('Unesite naziv kategorije'); return; }
+
+  if (catEditId) {
+    // Edit existing
+    const cat = CATEGORIES.find(c => c.id === catEditId);
+    if (cat) {
+      cat.label = label;
+      cat.icon  = icon;
+      cat.color = catSelectedColor;
+    }
+  } else {
+    // Add new — generate unique id
+    const id = 'cat_' + Date.now();
+    CATEGORIES.push({ id, label, icon, color: catSelectedColor });
+  }
+
+  save();
+  closeModal('modal-cat');
+  renderCategoriesList();
+  buildCatGrid('cat-grid', 'selectCat');
+  buildTemplateDropdown();
+  toast(catEditId ? 'Kategorija ažurirana ✓' : 'Kategorija dodana ✓');
+}
+
+function deleteCat() {
+  if (!catEditId) return;
+  const isDefault = DEFAULT_CATEGORIES.find(d => d.id === catEditId);
+  if (isDefault) { toast('Zadane kategorije se ne mogu obrisati'); return; }
+  if (!confirm('Obrisati ovu kategoriju? Troškovi u njoj prebacit će se u "Ostalo".')) return;
+
+  // Remap expenses/templates that use this cat
+  state.expenses.forEach(e => { if (e.cat === catEditId) e.cat = 'ostalo'; });
+  state.templates.forEach(t => { if (t.cat === catEditId) t.cat = 'ostalo'; });
+  state.recurring.forEach(r => { if (r.cat === catEditId) r.cat = 'ostalo'; });
+  CATEGORIES = CATEGORIES.filter(c => c.id !== catEditId);
+
+  save();
+  closeModal('modal-cat');
+  renderCategoriesList();
+  buildCatGrid('cat-grid', 'selectCat');
+  toast('Kategorija obrisana');
+}
+
+// ══════════════════════════════════════════
+// TEMPLATES
+// ══════════════════════════════════════════
+
+let tplSelectedCat = 'rezije';
+let tplEditId = null;
+
+function buildTemplateDropdown() {
+  // called on category change — show chips filtered to current category
+  const row   = document.getElementById('template-row');
+  const chips = document.getElementById('template-chips');
+  if (!row || !chips) return;
+  const filtered = state.templates.filter(t => t.cat === selectedCat);
+  if (!filtered.length) { row.style.display = 'none'; return; }
+  row.style.display = '';
+  chips.innerHTML = filtered.map(t => `
+    <button type="button" onclick="applyTemplate('${t.id}')"
+      style="padding:5px 10px;border:1px solid var(--border2);border-radius:20px;
+             background:var(--bg3);color:var(--text2);font-family:var(--mono);
+             font-size:10px;cursor:pointer;transition:all 0.15s;white-space:nowrap;"
+      onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+      onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
+      ${t.desc}${t.amount ? ' · ' + t.amount.toFixed(2) + ' €' : ''}
+    </button>`).join('');
+}
+
+function applyTemplate(id) {
+  if (!id) return;
+  const t = state.templates.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('inp-desc').value = t.desc;
+  if (t.amount) {
+    document.getElementById('inp-amount').value = t.amount.toFixed(2);
+    document.getElementById('calc-preview').textContent = '';
+  }
+  updateBudgetHint();
+  document.getElementById('inp-amount').focus();
+  document.getElementById('inp-amount').select();
+}
+
+function renderTemplatesList() {
+  const el = document.getElementById('templates-list');
+  if (!el) return;
+  if (!state.templates.length) {
+    el.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-icon">◎</div>Nema predložaka</div>';
+    return;
+  }
+  el.innerHTML = state.templates.map(t => {
+    const cat = catById(t.cat);
+    return `
+      <div class="tx-item" onclick="openTemplateModal('${t.id}')">
+        <span class="tx-dot" style="background:${cat.color}"></span>
+        <div class="tx-info">
+          <div class="tx-name">${t.desc}</div>
+          <div class="tx-meta">${cat.icon} ${cat.label}</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--text2);">${t.amount ? t.amount.toFixed(2)+' €' : '—'}</div>
+      </div>`;
+  }).join('');
+}
+
+function openTemplateModal(id) {
+  tplEditId = id || null;
+  const t = id ? state.templates.find(x => x.id === id) : null;
+  tplSelectedCat = t ? t.cat : 'rezije';
+  document.getElementById('tpl-desc').value   = t ? t.desc : '';
+  document.getElementById('tpl-amount').value = t ? t.amount : '';
+  document.getElementById('tpl-delete-btn').style.display = t ? '' : 'none';
+  buildCatGrid('tpl-cat-grid', 'tplSelectCat');
+  openModal('modal-template');
+}
+
+function tplSelectCat(id) {
+  tplSelectedCat = id;
+  buildCatGrid('tpl-cat-grid', 'tplSelectCat');
+}
+
+function buildCatGrid(containerId, onSelect) {
+  const grid = document.getElementById(containerId);
+  if (!grid) return;
+  const activeCat = onSelect === 'tplSelectCat' ? tplSelectedCat : (onSelect === 'recSelectCat' ? recSelectedCat : selectedCat);
+  grid.innerHTML = CATEGORIES.map(cat => `
+    <button class="cat-btn ${cat.id===activeCat?'selected':''}" onclick="${onSelect}('${cat.id}')">
+      <span class="cat-icon">${cat.icon}</span>
+      <span>${cat.label}</span>
+    </button>`).join('');
+}
+
+function saveTemplate() {
+  const desc = document.getElementById('tpl-desc').value.trim();
+  if (!desc) { toast('Unesite opis predloška'); return; }
+  const amount = parseFloat(document.getElementById('tpl-amount').value) || 0;
+
+  if (tplEditId) {
+    const t = state.templates.find(x => x.id === tplEditId);
+    if (t) { t.desc = desc; t.cat = tplSelectedCat; t.amount = amount; }
+  } else {
+    state.templates.push({
+      id: 't_' + Date.now(),
+      desc, cat: tplSelectedCat, amount,
+    });
+  }
+  save();
+  closeModal('modal-template');
+  renderTemplatesList();
+  buildTemplateDropdown();
+  toast(tplEditId ? 'Predložak ažuriran ✓' : 'Predložak dodan ✓');
+}
+
+function deleteTemplate() {
+  if (!tplEditId) return;
+  if (!confirm('Obrisati predložak?')) return;
+  state.templates = state.templates.filter(x => x.id !== tplEditId);
+  save();
+  closeModal('modal-template');
+  renderTemplatesList();
+  buildTemplateDropdown();
+  // Ako nema više predložaka za odabranu kat, sakrij row
+  const row = document.getElementById('template-row');
+  const filtered = state.templates.filter(t => t.cat === selectedCat);
+  if (row && !filtered.length) row.style.display = 'none';
+  toast('Predložak obrisan');
+}
+
+// ══════════════════════════════════════════
+// EXPORT / IMPORT
+// ══════════════════════════════════════════
+
+function exportCSV() {
+  const rows = [['Datum','Vrsta','Kategorija','Opis','Iznos (EUR)','Napomena']];
+  [...state.expenses.map(e=>({...e,kind:'Trošak'})), ...state.incomes.map(i=>({...i,kind:'Prihod'}))]
+    .sort((a,b)=>b.ts-a.ts)
+    .forEach(e => rows.push([
+      e.date,
+      e.kind,
+      e.kind==='Prihod' ? (INCOME_LABELS[e.cat]||'Ostalo').replace(/[^\w\sčćžšđČĆŽŠĐ —]/gu,'').trim() : catById(e.cat).label,
+      e.desc,
+      e.amount.toFixed(2),
+      e.note||''
+    ]));
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  download('troskovi.csv', 'text/csv', csv);
+  toast('CSV exportiran ✓');
+}
+
+function exportXLSX() {
+  const allRows = [...state.expenses.map(e=>({...e,kind:'Trošak'})), ...state.incomes.map(i=>({...i,kind:'Prihod'}))]
+    .sort((a,b)=>b.ts-a.ts);
+
+  // Sheet 1: Sve transakcije
+  const txData = [['Datum','Vrsta','Kategorija','Opis','Iznos (EUR)','Napomena']];
+  allRows.forEach(e => txData.push([
+    e.date,
+    e.kind,
+    e.kind==='Prihod' ? (INCOME_LABELS[e.cat]||'Ostalo').replace(/[^\w\sčćžšđČĆŽŠĐ —]/gu,'').trim() : catById(e.cat).label,
+    e.desc,
+    parseFloat(e.amount.toFixed(2)),
+    e.note||''
+  ]));
+
+  // Sheet 2: Prihodi
+  const incData = [['Datum','Vrsta','Opis','Iznos (EUR)','Napomena']];
+  state.incomes.sort((a,b)=>b.ts-a.ts).forEach(i => incData.push([
+    i.date,
+    (INCOME_LABELS[i.cat]||'Ostalo').replace(/[^\w\sčćžšđČĆŽŠĐ —]/gu,'').trim(),
+    i.desc,
+    parseFloat(i.amount.toFixed(2)),
+    i.note||''
+  ]));
+
+  // Sheet 3: Troškovi
+  const expData = [['Datum','Kategorija','Opis','Iznos (EUR)','Napomena']];
+  state.expenses.sort((a,b)=>b.ts-a.ts).forEach(e => expData.push([
+    e.date,
+    catById(e.cat).label,
+    e.desc,
+    parseFloat(e.amount.toFixed(2)),
+    e.note||''
+  ]));
+
+  // Sheet 4: Budžet
+  const budData = [['Kategorija','Limit (EUR)']];
+  CATEGORIES.forEach(c => { if (state.budget[c.id]) budData.push([c.label, state.budget[c.id]]); });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(txData), 'Sve transakcije');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(incData), 'Prihodi');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expData), 'Troškovi');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(budData), 'Budžet');
+  XLSX.writeFile(wb, 'troskovi.xlsx');
+  toast('Excel exportiran ✓');
+}
+
+function exportJSON() {
+  const json = JSON.stringify({
+    exported: new Date().toISOString(),
+    expenses: state.expenses,
+    incomes:  state.incomes,
+    budget: state.budget,
+    recurring: state.recurring,
+    templates: state.templates,
+    categories: CATEGORIES,
+  }, null, 2);
+  download('troskovi-backup.json', 'application/json', json);
+  toast('JSON backup exportiran ✓');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.expenses) throw new Error('Nevažeći format');
+      if (!confirm(`Uvesti ${data.expenses.length} troškova? Postojeći podaci bit će zamijenjeni.`)) return;
+      state.expenses  = data.expenses;
+      state.incomes   = data.incomes   || [];
+      state.budget    = data.budget    || {};
+      state.recurring = data.recurring || [];
+      state.templates = data.templates || [];
+      initCategories(data.categories || null);
+      save();
+      buildTemplateDropdown();
+      toast(`Uvezeno ${data.expenses.length} troškova + ${state.templates.length} predložaka ✓`);
+      renderDashboard();
+    } catch(err) { toast('Greška pri uvozu: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function download(name, type, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type}));
+  a.download = name;
+  a.click();
+}
+
+function clearAllData() {
+  if (!confirm('UPOZORENJE: Ovo će trajno obrisati sve podatke. Jeste li sigurni?')) return;
+  if (!confirm('Potvrda: Stvarno obrisati sve?')) return;
+  localStorage.removeItem('boris_troskovi');
+  localStorage.removeItem('boris_theme');
+  localStorage.removeItem('pwa_banner_dismissed');
+  state.expenses = []; state.incomes = []; state.budget = {}; state.recurring = []; state.templates = [];
+  initCategories(null);
+  localStorage.setItem('boris_troskovi', JSON.stringify({
+    expenses: [], incomes: [], budget: {}, recurring: [], templates: [], categories: CATEGORIES
+  }));
+  toast('Svi podaci obrisani — stranica će se osvježiti...');
+  setTimeout(() => location.reload(), 1200);
+}
+
+// ══════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+
+function fmt(n) {
+  return (n||0).toLocaleString('hr', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
+}
+
+// Vraća 'YYYY-MM' koristeći LOKALNO vrijeme (izbjegava UTC offset bug)
+function localYM(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function fmtDate(d) {
+  return new Date(d + 'T12:00:00').toLocaleDateString('hr', {day:'numeric', month:'short'});
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ══════════════════════════════════════════
+// FONT SCALE
+// ══════════════════════════════════════════
+
+function applyFontScale(val) {
+  val = Math.min(140, Math.max(80, parseInt(val)));
+  document.documentElement.style.setProperty('--fs', val / 100);
+  localStorage.setItem('troskovi_fs', val);
+  const slider = document.getElementById('fs-slider');
+  const label  = document.getElementById('fs-value-label');
+  if (slider) slider.value = val;
+  if (label)  label.textContent = val + '%';
+}
+
+// ══════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════
+
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  setTheme(isLight ? 'dark' : 'light');
+  localStorage.setItem('boris_theme', isLight ? 'dark' : 'light');
+}
+
+function setTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('theme-toggle-btn').textContent = '🌙';
+    document.getElementById('theme-color-meta').setAttribute('content', '#ede9e3');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    document.getElementById('theme-toggle-btn').textContent = '☀';
+    document.getElementById('theme-color-meta').setAttribute('content', '#2c2c2e');
+  }
+  // Redraw charts with new colors
+  Object.keys(chartInstances).forEach(k => { chartInstances[k].destroy(); delete chartInstances[k]; });
+}
+
+
+
+// ══════════════════════════════════════════
+// PWA — SERVICE WORKER + INSTALL BANNER
+// ══════════════════════════════════════════
+
+(function setupPWA() {
+
+  // ── Service Worker registracija (vanjska datoteka) ──
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('[PWA] SW registriran, scope:', reg.scope))
+      .catch(err => console.warn('[PWA] SW greška:', err));
+  }
+
+  // ── Install Prompt (Android / Chrome / Edge) ──
+  let deferredPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const dismissed = localStorage.getItem('pwa_banner_dismissed');
+    const dismissedRecently = dismissed && (Date.now() - +dismissed < 7 * 86400000);
+    if (!dismissedRecently) showInstallBanner();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    hideInstallBanner();
+    deferredPrompt = null;
+    toast('✓ Aplikacija instalirana!');
+  });
+
+  function showInstallBanner() {
+    if (document.getElementById('pwa-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'pwa-banner';
+    banner.innerHTML = `
+      <div style="
+        position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+        background:#1c1c1e; border:1px solid #c8a96e; border-radius:8px;
+        font-family:'DM Mono',monospace; font-size:12px; color:#e8e4dd;
+        max-width:320px; width:calc(100% - 40px); animation:fadeIn .3s ease;
+      ">
+        <span style="font-size:24px">📲</span>
+        <div style="flex:1">
+          <div style="color:#c8a96e;font-size:11px;letter-spacing:.08em;margin-bottom:3px">INSTALIRAJ APP</div>
+          <div style="color:#8a8580;font-size:10px">Dodaj na početni zaslon za brži pristup</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="window._pwaDismiss()" style="
+            padding:6px 10px;border:1px solid #2a2a2a;border-radius:4px;
+            background:transparent;color:#555;font-family:inherit;font-size:10px;cursor:pointer;
+          ">✕</button>
+          <button onclick="window._pwaInstall()" style="
+            padding:6px 12px;border:none;border-radius:4px;
+            background:#c8a96e;color:#0a0a0a;font-family:inherit;
+            font-size:10px;cursor:pointer;font-weight:500;
+          ">Instaliraj</button>
+        </div>
+      </div>`;
+    document.body.appendChild(banner);
+  }
+
+  function hideInstallBanner() {
+    const b = document.getElementById('pwa-banner');
+    if (b) b.remove();
+  }
+
+  window._pwaInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') toast('Instalacija u tijeku…');
+    deferredPrompt = null;
+    hideInstallBanner();
+  };
+
+  window._pwaDismiss = () => {
+    hideInstallBanner();
+    localStorage.setItem('pwa_banner_dismissed', Date.now());
+  };
+
+  // ── iOS Safari uputa (nema beforeinstallprompt) ──
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  const dismissed = localStorage.getItem('pwa_banner_dismissed');
+  const dismissedRecently = dismissed && (Date.now() - +dismissed < 7 * 86400000);
+
+  if (isIOS && !isStandalone && !dismissedRecently) {
+    setTimeout(() => {
+      if (document.getElementById('pwa-banner')) return;
+      const banner = document.createElement('div');
+      banner.id = 'pwa-banner';
+      banner.innerHTML = `
+        <div style="
+          position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+          background:#1a1a1a; border:1px solid #c8a96e; border-radius:8px;
+          padding:14px 18px; z-index:400; box-shadow:0 4px 24px rgba(200,169,110,0.2);
+          font-family:'DM Mono',monospace; font-size:12px; color:#e8e4dd;
+          max-width:320px; width:calc(100% - 40px);
+        ">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="color:#c8a96e;font-size:11px;letter-spacing:.08em">INSTALIRAJ NA iOS</span>
+            <button onclick="window._pwaDismiss()" style="
+              background:none;border:none;color:#555;font-size:16px;cursor:pointer;padding:0;
+            ">✕</button>
+          </div>
+          <div style="color:#8a8580;font-size:10px;line-height:1.8">
+            Pritisni <strong style="color:#c8a96e">⎙ Dijeli</strong> u Safariju,
+            zatim <strong style="color:#c8a96e">Dodaj na početni zaslon</strong>
+          </div>
+          <div style="margin-top:8px;text-align:center;font-size:22px;letter-spacing:8px">⎙ → ＋</div>
+        </div>`;
+      document.body.appendChild(banner);
+    }, 2000);
+  }
+
+})();
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+
+(function init() {
+  load();
+
+  // Apply saved theme
+  const savedTheme = localStorage.getItem('boris_theme') || 'light';
+  setTheme(savedTheme);
+
+  // Apply saved font scale
+  const savedFs = localStorage.getItem('troskovi_fs') || '100';
+  applyFontScale(savedFs);
+
+  // Set today's date
+  document.getElementById('inp-date').value = new Date().toISOString().slice(0,10);
+
+  // Build category grids
+  buildCatGrid('cat-grid', 'selectCat');
+  buildTemplateDropdown();
+
+  // Set current month for history
+  state.currentMonth = localYM(new Date());
+
+  renderDashboard();
+  updateStorageSize();
+})();
+</script>
+</body>
+</html>
